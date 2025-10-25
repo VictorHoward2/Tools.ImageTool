@@ -12,8 +12,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,6 +21,7 @@ fun MainScreen(viewModel: MainViewModel) {
     val images by viewModel.selectedImages.collectAsState()
     val preview by viewModel.previewBitmap.collectAsState()
     val isProcessing by viewModel.isProcessing.collectAsState()
+    val stitchMode by viewModel.stitchMode.collectAsState()
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris: List<Uri> ->
@@ -37,8 +38,12 @@ fun MainScreen(viewModel: MainViewModel) {
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = { launcher.launch(arrayOf("image/*")) }) {
                         Text("Chọn ảnh")
@@ -47,8 +52,40 @@ fun MainScreen(viewModel: MainViewModel) {
                     Button(onClick = { viewModel.clearAll() }) {
                         Text("Xóa tất cả")
                     }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Stitch options
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Chế độ ghép:", style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Horizontal button
+                    val isHorizontal = stitchMode == StitchMode.HORIZONTAL
+                    OutlinedButton(
+                        onClick = { viewModel.setStitchMode(StitchMode.HORIZONTAL) },
+                        colors = if (isHorizontal) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        else ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("Ngang")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    // Vertical button
+                    val isVertical = stitchMode == StitchMode.VERTICAL
+                    OutlinedButton(
+                        onClick = { viewModel.setStitchMode(StitchMode.VERTICAL) },
+                        colors = if (isVertical) ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        else ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("Dọc")
+                    }
+
                     Spacer(modifier = Modifier.weight(1f))
-                    Button(onClick = { viewModel.stitchAndSave("stitched_${System.currentTimeMillis()}.png") }) {
+
+                    Button(
+                        onClick = { viewModel.stitchAndSave("stitched_${System.currentTimeMillis()}.png") },
+                        enabled = images.isNotEmpty()
+                    ) {
                         Text("Ghép & Lưu")
                     }
                 }
@@ -60,7 +97,9 @@ fun MainScreen(viewModel: MainViewModel) {
                 } else {
                     Text("Đã chọn ${images.size} ảnh:", style = MaterialTheme.typography.bodyLarge)
                     Spacer(modifier = Modifier.height(8.dp))
-                    LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    LazyColumn(modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)) {
                         items(items = images, key = { it.uri.toString() }) { item ->
                             ImageRow(item)
                         }

@@ -74,6 +74,35 @@ object BitmapUtils {
     }
 
     /**
+     * Merge bitmaps horizontally (stack left-to-right).
+     * NOTE: All bitmaps are used as-is (no scaling). Be careful with memory.
+     */
+    fun mergeHorizontally(bitmaps: List<Bitmap>): Bitmap? {
+        if (bitmaps.isEmpty()) return null
+        val width = bitmaps.sumOf { it.width }
+        val height = bitmaps.maxOf { it.height }
+
+        // Basic safeguard: if width/height invalid
+        if (width <= 0 || height <= 0) return null
+
+        return try {
+            val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(result)
+            var left = 0f
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+            for (bmp in bitmaps) {
+                // draw at left=left, top=0
+                canvas.drawBitmap(bmp, left, 0f, paint)
+                left += bmp.width
+            }
+            result
+        } catch (e: OutOfMemoryError) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
      * Create a downsampled bitmap for preview to avoid OOM on Compose Image.
      * Keeps aspect ratio and fits into maxWidth x maxHeight.
      */

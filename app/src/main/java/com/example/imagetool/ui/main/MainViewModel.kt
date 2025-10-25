@@ -14,6 +14,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 
+enum class StitchMode {
+    VERTICAL,
+    HORIZONTAL
+}
+
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo = ImageRepository(application.applicationContext)
@@ -26,6 +31,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing
+
+    private val _stitchMode = MutableStateFlow(StitchMode.VERTICAL)
+    val stitchMode: StateFlow<StitchMode> = _stitchMode
 
     private val MAX_TOTAL_PIXELS = 120_000_000 // safeguard: 120 million pixels ~ (e.g., 12k x 10k)
 
@@ -41,6 +49,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setStitchMode(mode: StitchMode) {
+        _stitchMode.value = mode
+    }
+
     fun removeItem(item: ImageItem) {
         _selectedImages.value = _selectedImages.value - item
     }
@@ -51,10 +63,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * Create an in-memory stitched bitmap (vertical) and keep a downsampled preview.
+     * Create an in-memory stitched bitmap and keep a downsampled preview.
      * Returns saved Uri if successful (save to MediaStore) or null.
      */
-    fun stitchAndSave(displayName: String = "") {
+    fun stitchAndSave(fileName: String = "") {
         viewModelScope.launch {
             val items = _selectedImages.value
             if (items.isEmpty()) return@launch
@@ -93,7 +105,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // Merge
-            val merged = BitmapUtils.mergeVertically(bitmaps)
+            val merged = when (_stitchMode.value) {
+                StitchMode.VERTICAL -> BitmapUtils.mergeVertically(bitmaps)
+                StitchMode.HORIZONTAL -> BitmapUtils.mergeHorizontally(bitmaps)
+            }
+            
             // create preview (scaled) for UI
             merged?.let {
                 val preview = BitmapUtils.createPreviewBitmap(it, 1200, 1600)
@@ -101,7 +117,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // Save merged bitmap to MediaStore
-            val savedUri = merged?.let { repo.saveBitmapToMediaStore(it, displayName) }
+            val savedUri = merged?.let { repo.saveBitmapToMediaStore(it, fileName) }
 
             // recycle large bitmaps to free memory
             try {
