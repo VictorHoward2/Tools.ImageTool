@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: MainViewModel) {
+fun MainScreen(viewModel: MainViewModel, onCropImage: (Uri) -> Unit) {
     val images by viewModel.selectedImages.collectAsState()
     val preview by viewModel.previewBitmap.collectAsState()
     val isProcessing by viewModel.isProcessing.collectAsState()
@@ -101,7 +101,7 @@ fun MainScreen(viewModel: MainViewModel) {
                         .fillMaxWidth()
                         .weight(1f)) {
                         items(items = images, key = { it.uri.toString() }) { item ->
-                            ImageRow(item)
+                            ImageRow(item, onCropImage = { onCropImage(item.uri) })
                         }
                     }
                 }
@@ -133,7 +133,10 @@ fun MainScreen(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun ImageRow(item: com.example.imagetool.data.model.ImageItem) {
+private fun ImageRow(
+    item: com.example.imagetool.data.model.ImageItem,
+    onCropImage: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -149,5 +152,9 @@ private fun ImageRow(item: com.example.imagetool.data.model.ImageItem) {
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text("${item.width}x${item.height}", style = MaterialTheme.typography.bodySmall)
+        Spacer(modifier = Modifier.width(8.dp))
+        Button(onClick = onCropImage) {
+            Text("Cắt")
+        }
     }
 }

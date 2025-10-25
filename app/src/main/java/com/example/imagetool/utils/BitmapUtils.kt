@@ -103,6 +103,31 @@ object BitmapUtils {
     }
 
     /**
+     * Creates a new bitmap by cropping the source bitmap.
+     */
+    fun cropBitmap(source: Bitmap, cropRect: Rect): Bitmap? {
+        if (cropRect.width() <= 0 || cropRect.height() <= 0) return null
+        // Ensure cropRect is within the bounds of the source bitmap
+        val safeCropRect = Rect(cropRect)
+        if (!safeCropRect.intersect(0, 0, source.width, source.height)) {
+            return null // crop rectangle is completely outside the bitmap
+        }
+
+        return try {
+            Bitmap.createBitmap(
+                source,
+                safeCropRect.left,
+                safeCropRect.top,
+                safeCropRect.width(),
+                safeCropRect.height()
+            )
+        } catch (e: OutOfMemoryError) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
      * Create a downsampled bitmap for preview to avoid OOM on Compose Image.
      * Keeps aspect ratio and fits into maxWidth x maxHeight.
      */
