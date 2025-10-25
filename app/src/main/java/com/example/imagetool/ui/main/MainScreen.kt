@@ -4,14 +4,19 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
@@ -143,16 +148,37 @@ private fun ImageRow(
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // placeholder thumbnail (we didn't include Coil). Show URI last path segment
-        Text(
-            text = item.uri.lastPathSegment ?: item.uri.toString(),
-            modifier = Modifier.weight(1f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+        val imageShape = RoundedCornerShape(8.dp)
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .clip(imageShape)
+                .background(Color.Gray.copy(alpha = 0.3f))
+        ) {
+            item.thumbnail?.let {
+                Image(
+                    bitmap = it.asImageBitmap(),
+                    contentDescription = "Thumbnail for ${item.uri.lastPathSegment}",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.uri.lastPathSegment ?: item.uri.toString(),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text("${item.width}x${item.height}", style = MaterialTheme.typography.bodySmall)
+        }
+        
         Spacer(modifier = Modifier.width(8.dp))
-        Text("${item.width}x${item.height}", style = MaterialTheme.typography.bodySmall)
-        Spacer(modifier = Modifier.width(8.dp))
+        
         Button(onClick = onCropImage) {
             Text("Cắt")
         }

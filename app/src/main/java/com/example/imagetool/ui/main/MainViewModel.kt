@@ -43,7 +43,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val items = uris.map { uri ->
                 val size = repo.getImageSize(uri)
                 val orientation = repo.getExifOrientation(uri)
-                ImageItem(uri, size.first, size.second, orientation)
+                val thumbnail = repo.loadThumbnail(uri, 128, 128)
+                ImageItem(uri, size.first, size.second, orientation, thumbnail)
             }
             _selectedImages.value = _selectedImages.value + items
         }
